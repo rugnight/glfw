@@ -2,7 +2,6 @@
 //  sprite.cpp
 //  glfw
 //
-//  Copyright (c) 2013年 東 義隆. All rights reserved.
 //
 
 #include "sprite.h"

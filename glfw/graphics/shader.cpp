@@ -2,8 +2,6 @@
 //  vertexShader.cpp
 //  glfw
 //
-//  Created by 東 義隆 on 13/05/08.
-//  Copyright (c) 2013年 東 義隆. All rights reserved.
 //
 #define GLFW_NO_GLU
 #define GLFW_INCLUDE_GL3
