@@ -1,7 +1,6 @@
 //
 //  model.cpp
 //
-//  Copyright (c) 2013年 東 義隆. All rights reserved.
 //
 
 #include "model.h"
