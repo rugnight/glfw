@@ -9,10 +9,10 @@
 #define __glfw__sprite__
 
 #include <iostream>
-#include "transform.h"
+#include "math/math.h"
 
 namespace rc { namespace graphics {
-    class ITexture;
+    class Material;
     class VertexBuffer;
     class VertexArrayObject;
 }}
@@ -34,12 +34,10 @@ namespace rc { namespace game {
 
             void draw();
 
-            Transform   transform_;
-
         private:
             math::Vector3   anchor_;
 
-            const graphics::ITexture*  texture_;
+            graphics::Material*  material_;
             graphics::VertexBuffer*   vertexBufferPoints_;
             graphics::VertexBuffer*   vertexBufferUVs_;
             graphics::VertexArrayObject*   vertexArrayObject_;

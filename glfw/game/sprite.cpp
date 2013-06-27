@@ -26,16 +26,10 @@ typedef struct attrbUv_ {
     f32 v;
 } AttrbUv;
 
-typedef struct spriteVertex_ {
-    AttrbPosition translate;
-    AttrbUv uv;
-} SpriteVertex;
-
-
 namespace rc { namespace game {
 
     Sprite::Sprite()
-        : texture_(NULL)
+        : material_(NEW Material())
         , vertexBufferPoints_(NEW VertexBuffer())
         , vertexBufferUVs_(NEW VertexBuffer())
         , vertexArrayObject_(NEW VertexArrayObject())
@@ -54,8 +48,10 @@ namespace rc { namespace game {
     void Sprite::create(const char* filePath)
     {
         destroy();
-        texture_ = TextureFactory::defaultFactory()->get(filePath);
 
+        material_->setTextureName(filePath);
+
+        ITexture* texture_ = material_->texture();
         float width = static_cast<u32>(texture_->width());
         float height = static_cast<u32>(texture_->height());
         
@@ -98,11 +94,11 @@ namespace rc { namespace game {
 
     void Sprite::setAnchor(const Vector3& anchor)
     {
-        RC_DEBUG_ASSERT(texture_);
         RC_DEBUG_ASSERT(vertexBufferPoints_);
         RC_DEBUG_ASSERT(vertexBufferUVs_);
         RC_DEBUG_ASSERT(vertexArrayObject_);
 
+        ITexture* texture_ = material_->texture();
         anchor_ = anchor;
         float offsetX = (static_cast<u32>(texture_->width()) * anchor_.x);
         float offsetY = (static_cast<u32>(texture_->height()) * anchor_.y);
@@ -145,11 +141,11 @@ namespace rc { namespace game {
 
     void Sprite::draw()
     {
-        RC_DEBUG_ASSERT(texture_)
         RC_DEBUG_ASSERT(vertexBufferUVs_)
         RC_DEBUG_ASSERT(vertexBufferPoints_)
         RC_DEBUG_ASSERT(vertexArrayObject_)
 
+        ITexture* texture_ = material_->texture();
         vertexArrayObject_->bind();
         texture_->bind();
 

@@ -12,15 +12,6 @@
 #include <OpenGL/glext.h>
 #include <OpenGL/gl3ext.h>
 
-#include <boost/flyweight/flyweight.hpp>      // class template flyweight
-#include <boost/flyweight/hashed_factory.hpp> // hashed flyweight factory
-#include <boost/flyweight/static_holder.hpp>  // regular factory instantiation
-#include <boost/flyweight/simple_locking.hpp> // simple locking policy
-#include <boost/flyweight/refcounted.hpp>     // refcounting tracking policy
-#include <boost/flyweight/flyweight.hpp>
-#include <boost/flyweight/key_value.hpp>
-#include <boost/flyweight/no_tracking.hpp>
-
 namespace rc { namespace graphics {
 
     /* -------------------------------------------------- */

@@ -68,9 +68,6 @@ int main(int argc, const char * argv[])
     ShaderProgram shader;
     shader.create(vsrc0, fsrc0);
 
-    //Texture texture;
-    //texture.createFromFile("/Users/rugnight/Developer/Workspace/glfw/peace.tga");
-
     SpriteShader spriteShader;
     spriteShader.create();
 
@@ -103,10 +100,11 @@ int main(int argc, const char * argv[])
         // ------------------------------
         // Sprite
         // ------------------------------
-        sprite.transform_.position(0, 0, 0.0f);
-        sprite.transform_.rotate(0.0f, 0.0f, sprite.transform_.rotate().z+2.5f);
+        static Transform spriteTransform;
+        spriteTransform.position(0, 0, 0.0f);
+        spriteTransform.rotate(0.0f, 0.0f, spriteTransform.rotate().z+2.5f);
         sprite.setAnchor(Vector3(0.0f, 0.0f, 0.0f));
-        Matrix4 transformMat = sprite.transform_.matrix();
+        Matrix4 transformMat = spriteTransform.matrix();
         
         spriteShader.begin();
         s32 matLoc = spriteShader.getUniformLocation("viewProjMat");
