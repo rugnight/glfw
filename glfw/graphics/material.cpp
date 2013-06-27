@@ -4,6 +4,7 @@
  */
 
 #include "material.h"
+#include "texture.h"
 
 using namespace rc;
 using namespace rc::math;
@@ -63,4 +64,12 @@ namespace rc { namespace graphics {
         shininess_ = shininess; 
     }
 
+    ITexture* Material::texture() 
+    {
+        // マテリアルの準備が出来ていなければする
+        if (!texture_ && !textureName_.empty() ) {
+            texture_ = TextureFactory::defaultFactory()->get(textureName_.c_str());
+        }
+        return texture_; 
+    }
 }}

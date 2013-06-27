@@ -21,7 +21,6 @@ namespace rc { namespace game {
 
     Model::~Model()
     {
-        destroy();
         SAFE_DELETE(mesh_);
         SAFE_DELETE_ARRAY(vertexArrayObject_);
     }
@@ -65,41 +64,10 @@ namespace rc { namespace game {
                     vboUV.create(tmp.size(), 2, sizeof(f32), (void**)&tmp[0]);
                     vboUV.setAttribute(2, false);
                 }
-
-                // テクスチャをセット
-                if ( mesh_->subMeshes()[i]->material() ) {
-                    if ( !mesh_->subMeshes()[i]->material()->texture() ) {
-                        if ( mesh_->subMeshes()[i]->material()->textureName() != "" ) {
-                            std::string textureFilePath = getParentDir(filePath);
-                            textureFilePath += mesh_->subMeshes()[i]->material()->textureName();
-                            Texture *texture = NEW Texture();
-
-                            if ( texture->createFromFile(textureFilePath.c_str()) ) {
-                                mesh_->subMeshes()[i]->material()->setTexture(texture);
-                            } else {
-                                SAFE_DELETE(texture);
-                                mesh_->subMeshes()[i]->material()->setTexture(NULL);
-                            }
-                        }
-                    }
-                }
                 vertexArrayObject_[i].unbind();
             }
         }
         return true;
-    }
-
-    void Model::destroy()
-    {
-        for ( int i = 0; i < mesh_->subMeshes().size(); ++i ) {
-            if ( mesh_->subMeshes()[i]->material() ) {
-                if ( mesh_->subMeshes()[i]->material()->texture() ) {
-                    graphics::Texture *texture = mesh_->subMeshes()[i]->material()->texture();
-                    SAFE_DELETE(texture);
-                    mesh_->subMeshes()[i]->material()->setTexture(NULL);
-                }
-            }
-        }
     }
 
     void Model::draw()
@@ -113,14 +81,18 @@ namespace rc { namespace game {
             // マテリアルの設定
             if ( mesh_->subMeshes()[i]->material() ) {
                 if ( mesh_->subMeshes()[i]->material()->texture() ) {
-                    mesh_->subMeshes()[i]->material()->texture()->bind();
+                    if ( mesh_->subMeshes()[i]->material()->texture()->isValid() ) {
+                        mesh_->subMeshes()[i]->material()->texture()->bind();
+                    }
                 }
             }
             // 描画
             Render::self()->drawArrays(PRIMITIVE_TRIANGLES, 0, mesh_->subMeshes()[i]->pointsIndex().size());
             if ( mesh_->subMeshes()[i]->material() ) {
                 if ( mesh_->subMeshes()[i]->material()->texture() ) {
-                    mesh_->subMeshes()[i]->material()->texture()->unbind();
+                    if ( mesh_->subMeshes()[i]->material()->texture()->isValid() ) {
+                        mesh_->subMeshes()[i]->material()->texture()->unbind();
+                    }
                 }
             }
             

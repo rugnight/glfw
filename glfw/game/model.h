@@ -24,7 +24,6 @@ namespace rc { namespace game {
             virtual ~Model();
 
             boolean createFromFile(const char* filePath);
-            void destroy();
 
             void draw();
 

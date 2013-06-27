@@ -12,7 +12,7 @@
 #include "transform.h"
 
 namespace rc { namespace graphics {
-    class Texture;
+    class ITexture;
     class VertexBuffer;
     class VertexArrayObject;
 }}
@@ -39,7 +39,7 @@ namespace rc { namespace game {
         private:
             math::Vector3   anchor_;
 
-            graphics::Texture*  texture_;
+            const graphics::ITexture*  texture_;
             graphics::VertexBuffer*   vertexBufferPoints_;
             graphics::VertexBuffer*   vertexBufferUVs_;
             graphics::VertexArrayObject*   vertexArrayObject_;

@@ -4,38 +4,41 @@
 //
 //
 
-#ifndef __glfw__texture__
-#define __glfw__texture__
+#ifndef __GLFW__TEXTURE__
+#define __GLFW__TEXTURE__
 
 #include "core.h"
 
 namespace rc { namespace graphics {
 
-    /* -------------------------------------------------- */
-    class Texture
-    /* -------------------------------------------------- */
+    class ITexture
     {
         public:
-            Texture();
-            virtual ~Texture();
+            virtual ~ITexture() {}
 
-            bool createFromFile(const char* filePath);
-            void destroy();
+            virtual void bind() const = 0;
+            virtual void unbind() const = 0;
 
-            void bind();
-            void unbind();
+            virtual u32 width() const = 0;
+            virtual u32 height() const = 0;
 
-            u32 width() { return width_; };
-            u32 height() { return height_; }
-
-        private:
-            u32 texture_;
-
-            u32 width_;
-            u32 height_;
+            virtual boolean isValid() = 0;
     };
 
+    class TextureFactory
+    {
+        public:
+            TextureFactory();
+            virtual ~TextureFactory();
 
+            static TextureFactory* defaultFactory();
+
+            ITexture* get(const char *filePath);
+            void release(ITexture* texture);
+
+        private:
+            std::map<std::string, ITexture*>    textureMap_;
+    };
 
 }}
 

@@ -35,7 +35,7 @@ typedef struct spriteVertex_ {
 namespace rc { namespace game {
 
     Sprite::Sprite()
-        : texture_(NEW Texture())
+        : texture_(NULL)
         , vertexBufferPoints_(NEW VertexBuffer())
         , vertexBufferUVs_(NEW VertexBuffer())
         , vertexArrayObject_(NEW VertexArrayObject())
@@ -49,13 +49,12 @@ namespace rc { namespace game {
         SAFE_DELETE(vertexArrayObject_);
         SAFE_DELETE(vertexBufferPoints_);
         SAFE_DELETE(vertexBufferUVs_);
-        SAFE_DELETE(texture_);
     }
 
     void Sprite::create(const char* filePath)
     {
         destroy();
-        texture_->createFromFile(filePath);
+        texture_ = TextureFactory::defaultFactory()->get(filePath);
 
         float width = static_cast<u32>(texture_->width());
         float height = static_cast<u32>(texture_->height());
@@ -95,7 +94,6 @@ namespace rc { namespace game {
     {
         vertexBufferPoints_->destroy();
         vertexBufferUVs_->destroy();
-        texture_->destroy();
     }
 
     void Sprite::setAnchor(const Vector3& anchor)

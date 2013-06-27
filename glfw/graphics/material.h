@@ -11,7 +11,7 @@
 #include "math/math.h"
 
 namespace rc { namespace graphics {
-    class Texture;
+    class ITexture;
 
     /* -------------------------------------------------- */
     class Material
@@ -35,8 +35,7 @@ namespace rc { namespace graphics {
             void setSpecular(math::Vector3 &specular);
             void setShininess(float shininess);
 
-            Texture *texture() { return texture_; }
-            void setTexture(Texture *texture) { texture_ = texture; }
+            ITexture *texture();
 
         private:
             std::string  name_;
@@ -47,7 +46,7 @@ namespace rc { namespace graphics {
             math::Vector3 specular_;
             f32 shininess_;
 
-            Texture *texture_;
+            ITexture *texture_;
     };
 }}
 

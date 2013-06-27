@@ -20,6 +20,11 @@ using namespace rc::game;
 using namespace rc::graphics;
 using namespace rc::math;
 
+#include <boost/shared_ptr.hpp>
+typedef boost::shared_ptr<ITexture> obj_ptr;
+
+using namespace std;
+
 int main(int argc, const char * argv[])
 {
     glfwInit();
@@ -34,7 +39,7 @@ int main(int argc, const char * argv[])
     // 開いたウィンドウに対する設定
     glfwSwapInterval(1);
     glfwSetWindowTitle("sample");
-   
+    
     // バーテックスシェーダのソースプログラム
     static const GLchar vsrc0[] =
         "#version 330 core\n"
@@ -63,8 +68,8 @@ int main(int argc, const char * argv[])
     ShaderProgram shader;
     shader.create(vsrc0, fsrc0);
 
-    Texture texture;
-    texture.createFromFile("/Users/rugnight/Developer/Workspace/glfw/peace.tga");
+    //Texture texture;
+    //texture.createFromFile("/Users/rugnight/Developer/Workspace/glfw/peace.tga");
 
     SpriteShader spriteShader;
     spriteShader.create();

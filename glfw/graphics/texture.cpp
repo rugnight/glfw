@@ -12,13 +12,54 @@
 #include <OpenGL/glext.h>
 #include <OpenGL/gl3ext.h>
 
+#include <boost/flyweight/flyweight.hpp>      // class template flyweight
+#include <boost/flyweight/hashed_factory.hpp> // hashed flyweight factory
+#include <boost/flyweight/static_holder.hpp>  // regular factory instantiation
+#include <boost/flyweight/simple_locking.hpp> // simple locking policy
+#include <boost/flyweight/refcounted.hpp>     // refcounting tracking policy
+#include <boost/flyweight/flyweight.hpp>
+#include <boost/flyweight/key_value.hpp>
+#include <boost/flyweight/no_tracking.hpp>
+
 namespace rc { namespace graphics {
+
+    /* -------------------------------------------------- */
+    class Texture : public ITexture
+    /* -------------------------------------------------- */
+    {
+        public:
+            Texture();
+            Texture(std::string filePath);
+            virtual ~Texture();
+
+            bool createFromFile(const char* filePath);
+            void destroy();
+
+            void bind() const;
+            void unbind() const;
+
+            u32 width() const { return width_; };
+            u32 height() const { return height_; }
+
+            virtual boolean isValid() { return (0 < texture_); } 
+
+        private:
+            u32 texture_;
+            u32 width_;
+            u32 height_;
+    };
 
     Texture::Texture()
         : texture_(0)
         , width_(0)
         , height_(0)
     {
+    }
+    
+    Texture::Texture(std::string filePath)
+    {
+        Texture();
+        this->createFromFile(filePath.c_str());
     }
 
     Texture::~Texture()
@@ -72,16 +113,70 @@ namespace rc { namespace graphics {
         height_ = 0;
     }
 
-    void Texture::bind()
+    void Texture::bind() const
     {
         RC_DEBUG_ASSERT(0 < texture_);
         glBindTexture(GL_TEXTURE_2D, texture_);
     }
 
-    void Texture::unbind()
+    void Texture::unbind() const
     {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    const char* dataRoot = "/Users/rugnight/Developer/Workspace/glfw/";
+    TextureFactory::TextureFactory()
+    {
+    }
+
+    TextureFactory::~TextureFactory()
+    {
+        auto it = textureMap_.begin();
+        while ( it != textureMap_.end() ) {
+            SAFE_DELETE(it->second);
+            ++it;
+        }
+    }
+
+    TextureFactory* TextureFactory::defaultFactory()
+    {
+        static TextureFactory defaultFactory;
+        return &defaultFactory;
+    }
+
+    ITexture* TextureFactory::get(const char *filePath)
+    {
+        ITexture* ret = NULL;
+        auto it = textureMap_.find(filePath);
+        if ( it == textureMap_.end() ) {
+            Texture *rawTex = NEW Texture(filePath);
+            if ( !rawTex->isValid() ) {
+                std::string textureFilePath = dataRoot;
+                textureFilePath += filePath;
+                rawTex->createFromFile(textureFilePath.c_str());
+            }
+            ret = rawTex;
+            std::pair<std::string, ITexture*> pair(filePath, ret);
+            textureMap_.insert(pair);
+
+        } else {
+            ret = it->second;
+
+        }
+        return ret;
+    }
+
+    void TextureFactory::release(ITexture* texture)
+    {
+        auto it = textureMap_.begin();
+        while ( it == textureMap_.end() ) {
+            if ( it->second == texture ) {
+                //SAFE_DELETE(it->second);
+                //textureMap_.erace(it);
+                break;
+            }
+            ++it;
+        }
+    }
 
 }}
