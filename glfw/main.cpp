@@ -9,7 +9,11 @@
 #include <OpenGL/glext.h>
 #include <OpenGL/gl3ext.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <iostream>
+#include <list>
 
 #include "graphics/graphics.h"
 #include "game/game.h"
@@ -20,13 +24,176 @@ using namespace rc::game;
 using namespace rc::graphics;
 using namespace rc::math;
 
-#include <boost/shared_ptr.hpp>
-typedef boost::shared_ptr<ITexture> obj_ptr;
-
 using namespace std;
 
-int main(int argc, const char * argv[])
+class Node
 {
+    private:
+        Node() { Node("", NULL); }
+    public:
+        Node(std::string name, Node *parent)
+        : name_(name)
+        , parent_(parent)
+        {
+            if (parent_) {
+                parent_->addChild(this);
+            }
+        }
+    
+        virtual ~Node() {}
+
+        const std::string& name() { return name_; }
+
+        Node* parent() { return parent_; }
+        void setParent(Node *node) { parent_ = node; }
+
+        std::list<Node*>* childlen() { return &childlen_; }
+        void addChild(Node *child) { child->setParent(this); childlen_.push_back(child); }
+
+    private:
+        std::string name_;
+
+        Node*   parent_;
+        std::list<Node*> childlen_;
+
+        Transform   transform_;
+};
+
+class Scene : public Node
+{
+public:
+    Scene(std::string name)
+    : Node(name, NULL)
+    {
+    
+    };
+    
+    virtual ~Scene() {}
+    
+private:
+};
+
+template<class T>
+void nodeTraversal(T *node, u32 depth)
+{
+    if (NULL == node) {
+        return ;
+    }
+    
+    for( int i = 0; i < depth; ++i ) { printf("-"); }
+    printf("%s\n", node->name().c_str());
+    
+    for ( auto it = node->childlen()->begin(); it != node->childlen()->end(); ++it ) {
+        nodeTraversal<T>(*it, ++depth);
+
+    }
+}
+
+class IDrawable
+{
+public:
+    virtual void draw() = 0;
+};
+
+class Font
+{
+    FT_Library  library_;
+    FT_Face     face_;
+    
+public:
+    Font()
+    : library_(0)
+    , face_(0)
+    {
+        
+    }
+    
+    virtual ~Font()
+    {
+        release();
+    }
+    
+    bool load(std::string file)
+    {
+        // freetypeの初期化
+        if ( 0 < FT_Init_FreeType(&library_) ){
+            return false;
+        }
+        
+        // フォントフェイスをファイルからロード
+        //  その他、メモリやwebから参照することも可能な様子
+        u32 error = FT_New_Face(
+                library_, 
+                file.c_str(), 
+                0,                      // 1ファイルに複数のフォントが含まれている場合に指定
+                &face_);
+        if ( error == FT_Err_Unknown_File_Format ) {
+            // サポート外のフォントファイル
+            return false;
+        }
+        else if ( error ) {
+            // その他のエラー（ファイルが使用中とか、壊れているとか）
+            return false;
+        }
+
+        // 文字サイズを設定
+#if 0
+        error = FT_Set_Char_Size(
+                face,
+                0,       // 文字幅、0を指定すると高さとおなじになる
+                16*64,   // 文字高、
+                300,     /* horizontal device resolution    */
+                300 );   /* vertical device resolution      */
+#else 
+        // サイズ指定の簡易版関数
+        error = FT_Set_Pixel_Sizes(
+                face_,
+                0,      // ピクセル幅
+                16 );   // ピクセル高
+#endif
+        
+        FT_GlyphSlot g = face_->glyph;
+        int w = 0;
+        int h = 0;
+        
+        for(int i = 32; i < 128; i++) {
+            if(FT_Load_Char(face_, i, FT_LOAD_RENDER)) {
+                fprintf(stderr, "Loading character %c failed!\n", i);
+                continue;
+            }
+            
+            w += g->bitmap.width;
+            h = std::max(h, g->bitmap.rows);
+            
+            /* you might as well save this value as it is needed later on */
+        }
+
+        
+        return true;
+    }
+    
+    void release()
+    {
+        if (face_) {
+            FT_Done_Face(face_);
+        }
+        if (library_) {
+            FT_Done_FreeType(library_);
+        }
+    }
+
+};
+
+
+int main(int argc, const char * argv[])
+{    
+    Node root("root", NULL);
+    Node child0("child0", &root);
+    Node child1("child1", &root);
+    Node child2("child2", &child0);
+    Node child3("child3", &child2);
+    //nodeTraversal<IDrawable>(&root, 0);
+    
     glfwInit();
 
     // OpenGL Version 3.2 Core Profile を選択する
@@ -39,6 +206,9 @@ int main(int argc, const char * argv[])
     // 開いたウィンドウに対する設定
     glfwSwapInterval(1);
     glfwSetWindowTitle("sample");
+    
+    //Font font;
+    //font.load("/Users/rugnight/Developer/Workspace/glfw/Osaka.ttf");
     
     // バーテックスシェーダのソースプログラム
     static const GLchar vsrc0[] =
@@ -71,8 +241,8 @@ int main(int argc, const char * argv[])
     SpriteShader spriteShader;
     spriteShader.create();
 
-    Sprite sprite;
-    sprite.create("/Users/rugnight/Developer/Workspace/glfw/beauty.tga");
+    //Sprite sprite;
+    //sprite.create("/Users/rugnight/Developer/Workspace/glfw/beauty.tga");
 
     Model mesh;
     mesh.createFromFile("/Users/rugnight/Developer/Workspace/glfw/mikuA.obj");
@@ -96,7 +266,7 @@ int main(int argc, const char * argv[])
         if ( glfwGetKey('D') ) { rotY -= 1.1f; }
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+#if 0
         // ------------------------------
         // Sprite
         // ------------------------------
@@ -111,6 +281,7 @@ int main(int argc, const char * argv[])
         spriteShader.setUniformMatrix4fv(matLoc, 1, false, &transformMat[0][0]);
         sprite.draw();
         spriteShader.end();
+#endif
         
         // ------------------------------
         // Mesh
@@ -127,8 +298,8 @@ int main(int argc, const char * argv[])
         Matrix4 wvpMat = projMat * viewMat * transform.matrix();
         
         shader.begin();
-        matLoc = shader.getUniformLocation("viewProjMat");
-        shader.setUniformMatrix4fv(matLoc, 1, false, &wvpMat[0][0]);
+        s32 vpmLoc = shader.getUniformLocation("viewProjMat");
+        shader.setUniformMatrix4fv(vpmLoc, 1, false, &wvpMat[0][0]);
         mesh.draw();
         shader.end();
         
@@ -136,6 +307,8 @@ int main(int argc, const char * argv[])
     }
     
     glfwTerminate();
+    
+    leak_check_dump("leak.txt");
     return 0;
 }
 

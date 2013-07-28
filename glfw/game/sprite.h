@@ -12,13 +12,13 @@
 #include "math/math.h"
 
 namespace rc { namespace graphics {
-    class Material;
     class VertexBuffer;
     class VertexArrayObject;
 }}
 
 namespace rc { namespace game {
-
+    class Material;
+    
     /* -------------------------------------------------- */
     class Sprite
     /* -------------------------------------------------- */
@@ -37,7 +37,7 @@ namespace rc { namespace game {
         private:
             math::Vector3   anchor_;
 
-            graphics::Material*  material_;
+            Material*  material_;
             graphics::VertexBuffer*   vertexBufferPoints_;
             graphics::VertexBuffer*   vertexBufferUVs_;
             graphics::VertexArrayObject*   vertexArrayObject_;

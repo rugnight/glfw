@@ -101,7 +101,7 @@ void operator delete[](void* p)
 }
 
 
-void leak_check_dump(const char* str)
+extern void leak_check_dump(const char* str)
 {
     const int NAME_SIZE = 128;
     char file_name[NAME_SIZE];

@@ -15,14 +15,15 @@
 namespace rc { namespace graphics {
 
     /* -------------------------------------------------- */
-    class Texture : public ITexture
+    class TextureGL : public ITexture
     /* -------------------------------------------------- */
     {
         public:
-            Texture();
-            Texture(std::string filePath);
-            virtual ~Texture();
+            TextureGL();
+            TextureGL(std::string filePath);
+            virtual ~TextureGL();
 
+            bool create(u32 width, u32 height);
             bool createFromFile(const char* filePath);
             void destroy();
 
@@ -32,6 +33,8 @@ namespace rc { namespace graphics {
             u32 width() const { return width_; };
             u32 height() const { return height_; }
 
+            void writeImage(u32 x, u32 y, u32 width, u32 height, void *data);
+
             virtual boolean isValid() { return (0 < texture_); } 
 
         private:
@@ -40,29 +43,54 @@ namespace rc { namespace graphics {
             u32 height_;
     };
 
-    Texture::Texture()
+    TextureGL::TextureGL()
         : texture_(0)
         , width_(0)
         , height_(0)
     {
     }
     
-    Texture::Texture(std::string filePath)
+    TextureGL::TextureGL(std::string filePath)
+    : TextureGL()
     {
-        Texture();
         this->createFromFile(filePath.c_str());
     }
 
-    Texture::~Texture()
+    TextureGL::~TextureGL()
     {
+        printf("destroy texture [%d]\n", texture_);
         destroy();
+    }
+    
+    
+    
+    bool TextureGL::create(u32 width, u32 height)
+    {
+        glGenTextures(1, &texture_);
+        glBindTexture(GL_TEXTURE_2D, texture_);
+        
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        glTexImage2D( GL_TEXTURE_2D,
+                     0,
+                     GL_ALPHA,
+                     width,
+                     height,
+                     0,
+                     GL_ALPHA,
+                     GL_UNSIGNED_BYTE,
+                     0 );
+        
+        width_ = width;
+        height_ = height;
+        
+        return true;
     }
 
     /*!
      @brief 画像ファイルからテクスチャを生成する
      @param [in]    filePath   画像ファイルへのパス
      */
-    bool Texture::createFromFile(const char* filePath)
+    bool TextureGL::createFromFile(const char* filePath)
     {
         // ファイルから画像データを読み込む
         //  GLFW_NO_RESCALE_BIT サイズを２の累乗にリサイズしない
@@ -89,13 +117,29 @@ namespace rc { namespace graphics {
         
         glfwFreeImage(&img);
         
+        printf("create texture [%d: %s]\n", texture_, filePath);
         return true;
+    }
+    
+    
+    void TextureGL::writeImage(u32 x, u32 y, u32 width, u32 height, void *data)
+    {
+        RC_DEBUG_ASSERT(0 < texture_);
+        glTexSubImage2D(GL_TEXTURE_2D,
+                        0,                  // MIPMAP
+                        x,                  // x
+                        y,                  // y
+                        width,              // width
+                        height,             // height
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        &texture_);
     }
 
     /*!
      @brief テクスチャの破棄
      */
-    void Texture::destroy()
+    void TextureGL::destroy()
     {
         if ( 0 < texture_ ) {
             glDeleteTextures(1, &texture_);
@@ -104,13 +148,13 @@ namespace rc { namespace graphics {
         height_ = 0;
     }
 
-    void Texture::bind() const
+    void TextureGL::bind() const
     {
         RC_DEBUG_ASSERT(0 < texture_);
         glBindTexture(GL_TEXTURE_2D, texture_);
     }
 
-    void Texture::unbind() const
+    void TextureGL::unbind() const
     {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -124,7 +168,7 @@ namespace rc { namespace graphics {
     {
         auto it = textureMap_.begin();
         while ( it != textureMap_.end() ) {
-            SAFE_DELETE(it->second);
+            //SAFE_DELETE(it->second);
             ++it;
         }
     }
@@ -134,30 +178,50 @@ namespace rc { namespace graphics {
         static TextureFactory defaultFactory;
         return &defaultFactory;
     }
-
-    ITexture* TextureFactory::get(const char *filePath)
+    
+    Texture TextureFactory::get(u32 width, u32 height)
     {
-        ITexture* ret = NULL;
+        TextureGL* rawTex = NEW TextureGL();
+        rawTex->create(width, height);
+        
+        if ( !rawTex->isValid() ) {
+            return Texture(NULL);
+        }
+        
+        Texture ret(rawTex);
+        return ret;
+    }
+
+    Texture TextureFactory::get(const char *filePath)
+    {
         auto it = textureMap_.find(filePath);
         if ( it == textureMap_.end() ) {
-            Texture *rawTex = NEW Texture(filePath);
+            TextureGL* rawTex = NEW TextureGL(filePath);
+
+
             if ( !rawTex->isValid() ) {
                 std::string textureFilePath = dataRoot;
                 textureFilePath += filePath;
                 rawTex->createFromFile(textureFilePath.c_str());
+                
+                if ( !rawTex->isValid() ) {
+                    return Texture(NULL);
+                }
             }
-            ret = rawTex;
-            std::pair<std::string, ITexture*> pair(filePath, ret);
+
+            Texture ret(rawTex);
+            std::pair<std::string, Texture> pair(filePath, ret);
             textureMap_.insert(pair);
+            return ret;
 
         } else {
-            ret = it->second;
+            return it->second;
 
         }
-        return ret;
+        return Texture(NULL);
     }
 
-    void TextureFactory::release(ITexture* texture)
+    void TextureFactory::release(Texture texture)
     {
         auto it = textureMap_.begin();
         while ( it == textureMap_.end() ) {

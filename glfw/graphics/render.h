@@ -36,8 +36,12 @@ namespace rc { namespace graphics {
                 return &render;
             }
 
+            void initialize();
+        
             void drawArrays(u32 primitiveType, u32 startOffset, u64 vertexCount);
-
+        
+            void drawQuad();
+        
         private:
 
     };

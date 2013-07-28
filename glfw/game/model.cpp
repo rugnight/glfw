@@ -4,6 +4,8 @@
 //
 
 #include "model.h"
+#include "mesh.h"
+#include "subMesh.h"
 #include "core/core.h"
 #include "graphics/graphics.h"
 

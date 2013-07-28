@@ -158,6 +158,11 @@ void ShaderProgram::setUniform1fv(u32 location, u32 count, f32* value)
     glUniform1fv(location, count, value);
 }
     
+void ShaderProgram::setUniform2fv(u32 location, u32 count, f32* value)
+{
+    glUniform2fv(location, count, value);
+}
+    
 void ShaderProgram::setUniformMatrix4fv(u32 location, u32 count, boolean normalize, f32* value)
 {
     glUniformMatrix4fv(location, count, normalize, value);

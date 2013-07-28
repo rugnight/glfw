@@ -12,7 +12,5 @@
 #include "vertexArrayObject.h"
 #include "shader.h"
 #include "texture.h"
-#include "mesh.h"
-#include "subMesh.h"
 
 #endif

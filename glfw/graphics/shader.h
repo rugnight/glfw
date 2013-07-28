@@ -44,6 +44,7 @@ namespace rc { namespace graphics {
         
         s32 getUniformLocation(const char* name);
         void setUniform1fv(u32 location, u32 count, f32* value);
+        void setUniform2fv(u32 location, u32 count, f32* value);
         void setUniformMatrix4fv(u32 location, u32 count, boolean normalize, f32* value);
         
         void begin();

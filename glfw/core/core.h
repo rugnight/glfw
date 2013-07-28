@@ -18,6 +18,8 @@
 #include "debug/memory.h"
 #include "debug/assert.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace rc {
 
     // 基本型

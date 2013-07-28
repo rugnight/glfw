@@ -8,12 +8,12 @@
 #include "transform.h"
 
 namespace rc { namespace graphics {
-    class Mesh;
     class VertexBuffer;
     class VertexArrayObject;
 }}
 
 namespace rc { namespace game {
+    class Mesh;
 
     /* -------------------------------------------------- */
     class Model 
@@ -28,7 +28,7 @@ namespace rc { namespace game {
             void draw();
 
         private:
-            graphics::Mesh *mesh_;
+            Mesh *mesh_;
             graphics::VertexArrayObject*   vertexArrayObject_;
     };
 
