@@ -11,7 +11,6 @@
 #include "material.h"
 
 namespace rc { namespace graphics {
-
     class SubMesh;
 
     class Mesh

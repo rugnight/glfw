@@ -8,6 +8,7 @@
 
 using namespace rc;
 using namespace rc::math;
+using namespace rc::graphics;
 
 namespace rc { namespace graphics {
 
@@ -40,6 +41,11 @@ namespace rc { namespace graphics {
         name_ = name; 
     }
 
+    void Material::setTexture(graphics::Texture texture)
+    {
+        texture_ = texture;
+    }
+
     void Material::setTextureName(const std::string& name) 
     { 
         textureName_ = name;
@@ -64,11 +70,11 @@ namespace rc { namespace graphics {
         shininess_ = shininess; 
     }
 
-    ITexture* Material::texture() 
+    graphics::Texture Material::texture() 
     {
         // マテリアルの準備が出来ていなければする
         if (!texture_ && !textureName_.empty() ) {
-            texture_ = TextureFactory::defaultFactory()->get(textureName_.c_str());
+            texture_ = TextureFactory::defaultFactory()->textureFromFile(textureName_.c_str());
         }
         return texture_; 
     }

@@ -6,81 +6,55 @@
 
 #include "texture.h"
 
-#define GLFW_NO_GLU
-#define GLFW_INCLUDE_GL3
-#include <GL/glfw.h>
-#include <OpenGL/glext.h>
-#include <OpenGL/gl3ext.h>
+static const char* dataRoot = "/Users/rugnight/Developer/Workspace/glfw/";
 
 namespace rc { namespace graphics {
-
-    /* -------------------------------------------------- */
-    class TextureGL : public ITexture
-    /* -------------------------------------------------- */
-    {
-        public:
-            TextureGL();
-            TextureGL(std::string filePath);
-            virtual ~TextureGL();
-
-            bool create(u32 width, u32 height);
-            bool createFromFile(const char* filePath);
-            void destroy();
-
-            void bind() const;
-            void unbind() const;
-
-            u32 width() const { return width_; };
-            u32 height() const { return height_; }
-
-            void writeImage(u32 x, u32 y, u32 width, u32 height, void *data);
-
-            virtual boolean isValid() { return (0 < texture_); } 
-
-        private:
-            u32 texture_;
-            u32 width_;
-            u32 height_;
-    };
-
-    TextureGL::TextureGL()
+    TextureBase::TextureBase()
         : texture_(0)
         , width_(0)
         , height_(0)
     {
     }
     
-    TextureGL::TextureGL(std::string filePath)
-    : TextureGL()
+    TextureBase::TextureBase(u32 width, u32 height, const ColorType& colorType)
+        : TextureBase()
     {
-        this->createFromFile(filePath.c_str());
+        create(width, height, colorType);
     }
 
-    TextureGL::~TextureGL()
+    TextureBase::TextureBase(std::string filePath)
+        : TextureBase()
+    {
+        createFromFile(filePath.c_str());
+    }
+
+    TextureBase::~TextureBase()
     {
         printf("destroy texture [%d]\n", texture_);
         destroy();
     }
     
-    
-    
-    bool TextureGL::create(u32 width, u32 height)
+    bool TextureBase::create(u32 width, u32 height, const ColorType& colorType)
     {
+        //glPixelStorei(GL_UNPACK_ALIGNMENT,4);
+
+        // 生成
         glGenTextures(1, &texture_);
         glBindTexture(GL_TEXTURE_2D, texture_);
         
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        // 領域を確保
         glTexImage2D( GL_TEXTURE_2D,
                      0,
-                     GL_ALPHA,
+                     colorType,
                      width,
                      height,
                      0,
-                     GL_ALPHA,
+                     colorType,
                      GL_UNSIGNED_BYTE,
-                     0 );
+                     NULL);
         
-        width_ = width;
+        // パラメータの保持
+        width_  = width;
         height_ = height;
         
         return true;
@@ -90,7 +64,7 @@ namespace rc { namespace graphics {
      @brief 画像ファイルからテクスチャを生成する
      @param [in]    filePath   画像ファイルへのパス
      */
-    bool TextureGL::createFromFile(const char* filePath)
+    bool TextureBase::createFromFile(const char* filePath)
     {
         // ファイルから画像データを読み込む
         //  GLFW_NO_RESCALE_BIT サイズを２の累乗にリサイズしない
@@ -100,29 +74,18 @@ namespace rc { namespace graphics {
             return false;
         }
         
-        glGenTextures(1, &texture_);
-        glBindTexture(GL_TEXTURE_2D, texture_);
-        
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-        glTexImage2D( GL_TEXTURE_2D, 0, img.Format, img.Width, img.Height, 0, img.Format, GL_UNSIGNED_BYTE, img.Data ); 
+        // 生成
+        create(img.Width, img.Height, static_cast<ColorType>(img.Format));
+        // 書き込み
+        writeImage(0, 0, img.Width, img.Height, static_cast<ColorType>(img.Format), img.Data);
 
-        width_ = img.Width;
-        height_ = img.Height;
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        
         glfwFreeImage(&img);
         
         printf("create texture [%d: %s]\n", texture_, filePath);
         return true;
     }
     
-    
-    void TextureGL::writeImage(u32 x, u32 y, u32 width, u32 height, void *data)
+    void TextureBase::writeImage(u32 x, u32 y, u32 width, u32 height, const ColorType& colorType, void *data)
     {
         RC_DEBUG_ASSERT(0 < texture_);
         glTexSubImage2D(GL_TEXTURE_2D,
@@ -131,35 +94,66 @@ namespace rc { namespace graphics {
                         y,                  // y
                         width,              // width
                         height,             // height
-                        GL_RGBA,
+                        colorType,
                         GL_UNSIGNED_BYTE,
-                        &texture_);
+                        data);
     }
 
     /*!
      @brief テクスチャの破棄
      */
-    void TextureGL::destroy()
+    void TextureBase::destroy()
     {
         if ( 0 < texture_ ) {
             glDeleteTextures(1, &texture_);
         }
-        width_ = 0;
+        width_  = 0;
         height_ = 0;
     }
 
-    void TextureGL::bind() const
+    void TextureBase::bind() const
     {
         RC_DEBUG_ASSERT(0 < texture_);
         glBindTexture(GL_TEXTURE_2D, texture_);
     }
 
-    void TextureGL::unbind() const
+    void TextureBase::unbind() const
     {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    const char* dataRoot = "/Users/rugnight/Developer/Workspace/glfw/";
+    // テクスチャステータス設定
+    void TextureBase::setWrapModeS(const TextureWrap& mode)
+    {
+        RC_DEBUG_ASSERT(glIsTexture(texture_))
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mode);
+    }
+
+    void TextureBase::setWrapModeT(const TextureWrap& mode)
+    {
+        RC_DEBUG_ASSERT(glIsTexture(texture_))
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mode);
+    }
+
+    void TextureBase::setMagFilterMode(const TextureMipmap& mode)
+    {
+        // デフォルトのパラメータによる不具合
+        //      テクスチャがミップマップを持たない場合，デフォルトのパラメータでは正常に描画ができない場合がある。
+        //      そのときは GL_TEXTURE_MAX_LEVEL を0にしたり，GL_TEXTURE_MIN_FILTER を
+        //      ミップマップを使わないもの( GL_NEAREST や GL_LINEAR )にすると正常に描画できる
+        RC_DEBUG_ASSERT(glIsTexture(texture_))
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mode);
+    }
+
+    void TextureBase::setMinFilterMode(const TextureMipmap& mode)
+    {
+        RC_DEBUG_ASSERT(glIsTexture(texture_))
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mode);
+    }
+
+    /* ================================================== */
+    //  TextureFactory
+    /* ================================================== */
     TextureFactory::TextureFactory()
     {
     }
@@ -179,10 +173,10 @@ namespace rc { namespace graphics {
         return &defaultFactory;
     }
     
-    Texture TextureFactory::get(u32 width, u32 height)
+    Texture TextureFactory::textureEmpty(u32 width, u32 height)
     {
-        TextureGL* rawTex = NEW TextureGL();
-        rawTex->create(width, height);
+        TextureBase* rawTex = NEW TextureBase();
+        rawTex->create(width, height, RGBA);
         
         if ( !rawTex->isValid() ) {
             return Texture(NULL);
@@ -192,11 +186,11 @@ namespace rc { namespace graphics {
         return ret;
     }
 
-    Texture TextureFactory::get(const char *filePath)
+    Texture TextureFactory::textureFromFile(const char *filePath)
     {
         auto it = textureMap_.find(filePath);
         if ( it == textureMap_.end() ) {
-            TextureGL* rawTex = NEW TextureGL(filePath);
+            TextureBase* rawTex = NEW TextureBase(filePath);
 
 
             if ( !rawTex->isValid() ) {

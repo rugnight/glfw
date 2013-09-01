@@ -8,27 +8,66 @@
 #define __GLFW__TEXTURE__
 
 #include "core.h"
+#include "graphics_core.h"
 
 namespace rc { namespace graphics {
 
-    class ITexture
+    /* -------------------------------------------------- */
+    class TextureBase
+    /* -------------------------------------------------- */
     {
         public:
-            virtual ~ITexture() {}
+            TextureBase();
+            TextureBase(u32 width, u32 height, const ColorType& colorType);
+            TextureBase(std::string filePath);
+            virtual ~TextureBase();
 
-            virtual void bind() const = 0;
-            virtual void unbind() const = 0;
+            // ------------------------------
+            // 生成
+            // ------------------------------
+            // 空のテクスチャ作成
+            bool create(u32 width, u32 height, const ColorType& colorType);
+            bool createFromFile(const char* filePath);
+            void destroy();
 
-            virtual u32 width() const = 0;
-            virtual u32 height() const = 0;
-        
-            virtual void writeImage(u32 x, u32 y, u32 width, u32 height, void *data) = 0;
+            // ------------------------------
+            // アタッチ
+            // ------------------------------
+            void bind() const;
+            void unbind() const;
 
-            virtual boolean isValid() = 0;
+            // ------------------------------
+            // パラメータ
+            // ------------------------------
+            u32 width() const { return width_; };
+            u32 height() const { return height_; }
+            virtual boolean isValid() { return (0 < texture_); } 
+
+            // ------------------------------
+            // 操作
+            // ------------------------------
+            void writeImage(u32 x, u32 y, u32 width, u32 height, const ColorType& colorType, void *data);
+
+            // ------------------------------
+            // テクスチャステータス設定
+            // ------------------------------
+            void setWrapModeS(const TextureWrap& mode);
+            void setWrapModeT(const TextureWrap& mode);
+            // 拡大時の補完処理
+            void setMagFilterMode(const TextureMipmap& mode);
+            // 縮小時の補完処理
+            void setMinFilterMode(const TextureMipmap& mode);
+
+        private:
+            u32 texture_;
+            u32 width_;
+            u32 height_;
     };
-    typedef boost::shared_ptr<ITexture> Texture;
+    typedef boost::shared_ptr<TextureBase> Texture;
 
+    /* -------------------------------------------------- */
     class TextureFactory
+    /* -------------------------------------------------- */
     {
         public:
             TextureFactory();
@@ -36,8 +75,8 @@ namespace rc { namespace graphics {
 
             static TextureFactory* defaultFactory();
 
-            Texture get(u32 width, u32 height);
-            Texture get(const char *filePath);
+            Texture textureEmpty(u32 width, u32 height);
+            Texture textureFromFile(const char *filePath);
             void release(Texture texture);
 
         private:

@@ -3,14 +3,8 @@
 //  glfw
 //
 //
-#define GLFW_NO_GLU
-#define GLFW_INCLUDE_GL3
-#include <GL/glfw.h>
-#include <OpenGL/glext.h>
-#include <OpenGL/gl3ext.h>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+#include "graphics_core.h"
 
 #include <iostream>
 #include <list>
@@ -20,11 +14,115 @@
 #include "math/math.h"
 
 using namespace rc;
-using namespace rc::game;
 using namespace rc::graphics;
 using namespace rc::math;
 
 using namespace std;
+
+// -----------------------------------
+// freetype2
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+class SpriteFont : public Sprite
+{
+    static FT_Library  library_;
+    static boolean initialize();
+    static void terminate();
+
+    FT_Face         face_; 
+    FT_GlyphSlot    slot_;
+
+    public:
+        SpriteFont();
+        virtual ~SpriteFont();
+
+        void spriteWithFont(const char* fontFilePath);
+};
+
+FT_Library  SpriteFont::library_ = NULL;
+
+SpriteFont::SpriteFont()
+    : face_(0)
+    , slot_(0)
+{
+}
+
+SpriteFont::~SpriteFont()
+{
+}
+
+boolean SpriteFont::initialize()
+{
+    u32 error = FT_Init_FreeType(&library_);
+    if ( error ) {
+        return false;
+    }
+    return true;
+}
+
+void SpriteFont::terminate()
+{
+}
+
+void SpriteFont::spriteWithFont(const char* fontFilePath)
+{
+    if ( NULL == SpriteFont::library_ ) {
+        boolean success = initialize();
+        if ( !success ) {
+            return ;
+        }
+    }
+
+    u32 error = FT_New_Face(SpriteFont::library_, fontFilePath, 0, &face_);
+    if ( error == FT_Err_Unknown_File_Format ) {
+        return ;
+
+    } else if ( error ) {
+        return ;
+
+    }
+    
+    FT_Set_Pixel_Sizes(face_, 48, 48);
+    
+    FT_Load_Char(face_, u'明', 0);
+    FT_Render_Glyph(face_->glyph, FT_RENDER_MODE_NORMAL);
+    FT_Bitmap *bm = &face_->glyph->bitmap;
+    
+    u32 width  = bm->width;
+    u32 height = bm->rows;
+    u32 pitch = 1;
+    GLuint * img = new GLuint[width * height];
+    memset( img, 0, sizeof(GLuint) * width * height);
+    
+    int c ;
+    for (int row = 0; row < bm->rows; row ++) {
+        for (int col = 0; col < bm->pitch; col  ++) {
+            c = bm->buffer[bm->pitch * (bm->rows-row) + col];
+            img[row*width+col] = 0x00ffffff | (c << 24);
+        }
+    }
+
+    // テクスチャを生成して書き込む
+    Texture texture = Texture(new TextureBase(width, height, RGBA));
+    texture->writeImage(0, 0, width, height, RGBA, img);
+    texture->bind();
+        texture->setWrapModeS(WRAP_CLAMP);
+        texture->setWrapModeT(WRAP_CLAMP);
+        texture->setMagFilterMode(MIPMAP_LINEAR);
+        texture->setMinFilterMode(MIPMAP_LINEAR);
+    texture->unbind();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    delete []img;
+
+    this->create(texture);
+}
+
+// freetype2
+// -----------------------------------
 
 class Node
 {
@@ -89,126 +187,24 @@ void nodeTraversal(T *node, u32 depth)
     }
 }
 
+static Texture fontTex = NULL;
+
 class IDrawable
 {
 public:
     virtual void draw() = 0;
 };
 
-class Font
-{
-    FT_Library  library_;
-    FT_Face     face_;
-    
-public:
-    Font()
-    : library_(0)
-    , face_(0)
-    {
-        
-    }
-    
-    virtual ~Font()
-    {
-        release();
-    }
-    
-    bool load(std::string file)
-    {
-        // freetypeの初期化
-        if ( 0 < FT_Init_FreeType(&library_) ){
-            return false;
-        }
-        
-        // フォントフェイスをファイルからロード
-        //  その他、メモリやwebから参照することも可能な様子
-        u32 error = FT_New_Face(
-                library_, 
-                file.c_str(), 
-                0,                      // 1ファイルに複数のフォントが含まれている場合に指定
-                &face_);
-        if ( error == FT_Err_Unknown_File_Format ) {
-            // サポート外のフォントファイル
-            return false;
-        }
-        else if ( error ) {
-            // その他のエラー（ファイルが使用中とか、壊れているとか）
-            return false;
-        }
-
-        // 文字サイズを設定
-#if 0
-        error = FT_Set_Char_Size(
-                face,
-                0,       // 文字幅、0を指定すると高さとおなじになる
-                16*64,   // 文字高、
-                300,     /* horizontal device resolution    */
-                300 );   /* vertical device resolution      */
-#else 
-        // サイズ指定の簡易版関数
-        error = FT_Set_Pixel_Sizes(
-                face_,
-                0,      // ピクセル幅
-                16 );   // ピクセル高
-#endif
-        
-        FT_GlyphSlot g = face_->glyph;
-        int w = 0;
-        int h = 0;
-        
-        for(int i = 32; i < 128; i++) {
-            if(FT_Load_Char(face_, i, FT_LOAD_RENDER)) {
-                fprintf(stderr, "Loading character %c failed!\n", i);
-                continue;
-            }
-            
-            w += g->bitmap.width;
-            h = std::max(h, g->bitmap.rows);
-            
-            /* you might as well save this value as it is needed later on */
-        }
-
-        
-        return true;
-    }
-    
-    void release()
-    {
-        if (face_) {
-            FT_Done_Face(face_);
-        }
-        if (library_) {
-            FT_Done_FreeType(library_);
-        }
-    }
-
-};
-
-
 int main(int argc, const char * argv[])
 {    
-    Node root("root", NULL);
-    Node child0("child0", &root);
-    Node child1("child1", &root);
-    Node child2("child2", &child0);
-    Node child3("child3", &child2);
+    //Node root("root", NULL);
+    //Node child0("child0", &root);
+    //Node child1("child1", &root);
+    //Node child2("child2", &child0);
+    //Node child3("child3", &child2);
     //nodeTraversal<IDrawable>(&root, 0);
     
-    glfwInit();
-
-    // OpenGL Version 3.2 Core Profile を選択する
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-      
-    glfwOpenWindow(500, 500, 8, 8, 8, 8, 24, 8, GLFW_WINDOW);
-    
-    // 開いたウィンドウに対する設定
-    glfwSwapInterval(1);
-    glfwSetWindowTitle("sample");
-    
-    //Font font;
-    //font.load("/Users/rugnight/Developer/Workspace/glfw/Osaka.ttf");
+    Render::self().initialize(500, 500);
     
     // バーテックスシェーダのソースプログラム
     static const GLchar vsrc0[] =
@@ -238,12 +234,13 @@ int main(int argc, const char * argv[])
     ShaderProgram shader;
     shader.create(vsrc0, fsrc0);
 
-    SpriteShader spriteShader;
-    spriteShader.create();
+    SpriteFont fontSprite;
+    fontSprite.spriteWithFont("/Users/rugnight/Developer/Workspace/glfw/Osaka.ttf");
 
-    //Sprite sprite;
-    //sprite.create("/Users/rugnight/Developer/Workspace/glfw/beauty.tga");
-
+    Sprite sprite;
+    sprite.create("/Users/rugnight/Developer/Workspace/glfw/beauty.tga");
+    //sprite.create(fontTex);
+    
     Model mesh;
     mesh.createFromFile("/Users/rugnight/Developer/Workspace/glfw/mikuA.obj");
 
@@ -265,8 +262,9 @@ int main(int argc, const char * argv[])
         if ( glfwGetKey('A') ) { rotY += 1.1f; }
         if ( glfwGetKey('D') ) { rotY -= 1.1f; }
         
+        glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#if 0
+#if 1
         // ------------------------------
         // Sprite
         // ------------------------------
@@ -275,17 +273,26 @@ int main(int argc, const char * argv[])
         spriteTransform.rotate(0.0f, 0.0f, spriteTransform.rotate().z+2.5f);
         sprite.setAnchor(Vector3(0.0f, 0.0f, 0.0f));
         Matrix4 transformMat = spriteTransform.matrix();
+        Vector2 screen = Vector2(500, 500);
         
-        spriteShader.begin();
-        s32 matLoc = spriteShader.getUniformLocation("viewProjMat");
-        spriteShader.setUniformMatrix4fv(matLoc, 1, false, &transformMat[0][0]);
+        Render::self().spriteShader().begin();
+        
+        Render::self().spriteShader().setAffine(spriteTransform.matrix());
+        Render::self().spriteShader().setScreen(screen);
         sprite.draw();
-        spriteShader.end();
+
+        Render::self().spriteShader().setAffine(Matrix4(1.0f));
+        Render::self().spriteShader().setScreen(screen);
+        fontSprite.draw();
+        
+        Render::self().spriteShader().end();
+        
 #endif
         
         // ------------------------------
         // Mesh
         // ------------------------------
+#if 0
         Transform transform;
         transform.position(Vector3(posX, posY, 0.0f));
         transform.rotate(Vector3(rotX, rotY, 0.0f));
@@ -302,13 +309,15 @@ int main(int argc, const char * argv[])
         shader.setUniformMatrix4fv(vpmLoc, 1, false, &wvpMat[0][0]);
         mesh.draw();
         shader.end();
-        
+#endif
+    
         glfwSwapBuffers();
     }
-    
+
+    Render::self().terminate();
     glfwTerminate();
     
-    leak_check_dump("leak.txt");
+    //leak_check_dump("leak.txt");
     return 0;
 }
 

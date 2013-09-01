@@ -12,7 +12,7 @@
 // ==================================================
 // function
 // ==================================================
-#if 1
+#if 0
 void* operator new(size_t size, char* file, int line);
 
 void* operator new[](size_t size, char* file, int line);

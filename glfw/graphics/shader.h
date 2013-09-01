@@ -8,7 +8,7 @@
 #define __glfw__vertexShader__
 
 #include "core.h"
-#include <GL/glfw.h>
+#include "graphics_core.h"
 #include <iostream>
 
 namespace rc { namespace graphics { 

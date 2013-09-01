@@ -9,9 +9,9 @@
 
 #include "core/core.h"
 #include "math/math.h"
+#include "graphics/texture.h"
 
 namespace rc { namespace graphics {
-    class ITexture;
 
     /* -------------------------------------------------- */
     class Material
@@ -29,13 +29,14 @@ namespace rc { namespace graphics {
             const float& shininess()         { return shininess_; }
 
             void setName(const std::string& name);
+            void setTexture(graphics::Texture texture);
             void setTextureName(const std::string& name);
             void setDiffuse(math::Vector3 &diffuse);
             void setAmbient(math::Vector3 &ambient);
             void setSpecular(math::Vector3 &specular);
             void setShininess(float shininess);
 
-            ITexture *texture();
+            rc::graphics::Texture texture();
 
         private:
             std::string  name_;
@@ -46,7 +47,7 @@ namespace rc { namespace graphics {
             math::Vector3 specular_;
             f32 shininess_;
 
-            ITexture *texture_;
+            graphics::Texture texture_;
     };
 }}
 

@@ -3,12 +3,8 @@
 //  glfw
 //
 //
-#define GLFW_NO_GLU
-#define GLFW_INCLUDE_GL3
-#include <GL/glfw.h>
-#include <OpenGL/glext.h>
-#include <OpenGL/gl3ext.h>
 
+#include "graphics_core.h"
 #include "shader.h"
 
 /* ------------------------------------------------------- */

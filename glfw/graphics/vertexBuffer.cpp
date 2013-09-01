@@ -1,10 +1,13 @@
-#include "vertexBuffer.h"
+/**
+ * @file vertexBuffer.cpp
+ * @brief 
+ * @author rugnight
+ * @version 
+ * @date 2013-09-01
+ */
 
-#define GLFW_NO_GLU
-#define GLFW_INCLUDE_GL3
-#include <GL/glfw.h>
-#include <OpenGL/glext.h>
-#include <OpenGL/gl3ext.h>
+#include "graphics_core.h"
+#include "vertexBuffer.h"
 
 #include "debug/assert.h"
 

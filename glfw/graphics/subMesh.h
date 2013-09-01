@@ -3,15 +3,14 @@
 //
 //
 
-#ifndef _RC_SUBMESH_H_INCLUDED_
-#define _RC_SUBMESH_H_INCLUDED_
+#ifndef _RC_SUBMESH_H_
+#define _RC_SUBMESH_H_
 
 #include "core/core.h"
 #include "math/math.h"
 #include "material.h"
 
 namespace rc { namespace graphics {
-
     class Mesh;
 
     class SubMesh
@@ -43,4 +42,4 @@ namespace rc { namespace graphics {
 
 }}
 
-#endif//_RC_SUBMESH_H_INCLUDED_
+#endif//_RC_SUBMESH_H_
