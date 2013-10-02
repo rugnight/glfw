@@ -18,7 +18,7 @@ namespace rc { namespace graphics {
     {
         public:
             TextureBase();
-            TextureBase(u32 width, u32 height, const ColorType& colorType);
+            TextureBase(u32 width, u32 height, const PixelFormat& pixelFormat);
             TextureBase(std::string filePath);
             virtual ~TextureBase();
 
@@ -26,7 +26,7 @@ namespace rc { namespace graphics {
             // 生成
             // ------------------------------
             // 空のテクスチャ作成
-            bool create(u32 width, u32 height, const ColorType& colorType);
+            bool create(u32 width, u32 height, const PixelFormat& pixelFormat);
             bool createFromFile(const char* filePath);
             void destroy();
 
@@ -46,7 +46,7 @@ namespace rc { namespace graphics {
             // ------------------------------
             // 操作
             // ------------------------------
-            void writeImage(u32 x, u32 y, u32 width, u32 height, const ColorType& colorType, void *data);
+            void writeImage(u32 x, u32 y, u32 width, u32 height, const PixelFormat& pixelFormat, void *data);
 
             // ------------------------------
             // テクスチャステータス設定

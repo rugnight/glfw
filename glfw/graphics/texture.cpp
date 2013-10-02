@@ -5,6 +5,8 @@
 //
 
 #include "texture.h"
+#include "graphics_core.h"
+#include "image.h"
 
 static const char* dataRoot = "/Users/rugnight/Developer/Workspace/glfw/";
 
@@ -16,10 +18,10 @@ namespace rc { namespace graphics {
     {
     }
     
-    TextureBase::TextureBase(u32 width, u32 height, const ColorType& colorType)
+    TextureBase::TextureBase(u32 width, u32 height, const PixelFormat& pixelFormat)
         : TextureBase()
     {
-        create(width, height, colorType);
+        create(width, height, pixelFormat);
     }
 
     TextureBase::TextureBase(std::string filePath)
@@ -34,25 +36,28 @@ namespace rc { namespace graphics {
         destroy();
     }
     
-    bool TextureBase::create(u32 width, u32 height, const ColorType& colorType)
+    bool TextureBase::create(u32 width, u32 height, const PixelFormat& pixelFormat)
     {
-        //glPixelStorei(GL_UNPACK_ALIGNMENT,4);
-
         // 生成
         glGenTextures(1, &texture_);
         glBindTexture(GL_TEXTURE_2D, texture_);
-        
+
+        Image bitmap(width, height, pixelFormat);
+
+        Rect rect(100, 500, 100, 200);
+        bitmap.fillRect(rect);
+
         // 領域を確保
-        glTexImage2D( GL_TEXTURE_2D,
+        glTexImage2D(GL_TEXTURE_2D,
                      0,
-                     colorType,
+                     pixelFormat.gl,
                      width,
                      height,
                      0,
-                     colorType,
+                     pixelFormat.gl,
                      GL_UNSIGNED_BYTE,
-                     NULL);
-        
+                     bitmap.data());
+
         // パラメータの保持
         width_  = width;
         height_ = height;
@@ -75,9 +80,9 @@ namespace rc { namespace graphics {
         }
         
         // 生成
-        create(img.Width, img.Height, static_cast<ColorType>(img.Format));
+        create(img.Width, img.Height, static_cast<PixelFormat>(img.Format));
         // 書き込み
-        writeImage(0, 0, img.Width, img.Height, static_cast<ColorType>(img.Format), img.Data);
+        writeImage(0, 0, img.Width, img.Height, static_cast<PixelFormat>(img.Format), img.Data);
 
         glfwFreeImage(&img);
         
@@ -85,7 +90,7 @@ namespace rc { namespace graphics {
         return true;
     }
     
-    void TextureBase::writeImage(u32 x, u32 y, u32 width, u32 height, const ColorType& colorType, void *data)
+    void TextureBase::writeImage(u32 x, u32 y, u32 width, u32 height, const PixelFormat& pixelFormat, void *data)
     {
         RC_DEBUG_ASSERT(0 < texture_);
         glTexSubImage2D(GL_TEXTURE_2D,
@@ -94,7 +99,7 @@ namespace rc { namespace graphics {
                         y,                  // y
                         width,              // width
                         height,             // height
-                        colorType,
+                        pixelFormat,
                         GL_UNSIGNED_BYTE,
                         data);
     }
@@ -151,9 +156,9 @@ namespace rc { namespace graphics {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mode);
     }
 
-    /* ================================================== */
+    /* -------------------------------------------------- */
     //  TextureFactory
-    /* ================================================== */
+    /* -------------------------------------------------- */
     TextureFactory::TextureFactory()
     {
     }
@@ -176,7 +181,7 @@ namespace rc { namespace graphics {
     Texture TextureFactory::textureEmpty(u32 width, u32 height)
     {
         TextureBase* rawTex = NEW TextureBase();
-        rawTex->create(width, height, RGBA);
+        rawTex->create(width, height, PIXEL_FORMAT_RGBA);
         
         if ( !rawTex->isValid() ) {
             return Texture(NULL);

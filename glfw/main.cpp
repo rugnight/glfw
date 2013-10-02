@@ -24,14 +24,15 @@ using namespace std;
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+/* -------------------------------------------------- */
 class SpriteFont : public Sprite
+/* -------------------------------------------------- */
 {
     static FT_Library  library_;
     static boolean initialize();
     static void terminate();
 
     FT_Face         face_; 
-    FT_GlyphSlot    slot_;
 
     public:
         SpriteFont();
@@ -44,7 +45,6 @@ FT_Library  SpriteFont::library_ = NULL;
 
 SpriteFont::SpriteFont()
     : face_(0)
-    , slot_(0)
 {
 }
 
@@ -82,18 +82,26 @@ void SpriteFont::spriteWithFont(const char* fontFilePath)
         return ;
 
     }
-    
+
+    // フォントサイズ
     FT_Set_Pixel_Sizes(face_, 48, 48);
+
+    u32 textureWidth  = 512;
+    u32 textureHeight = 512;
+
+    // テクスチャを生成
+    Texture texture = Texture(new TextureBase(textureWidth, textureHeight, PIXEL_FORMAT_RGBA));
     
+    // フォントビットマップ取得
     FT_Load_Char(face_, u'明', 0);
     FT_Render_Glyph(face_->glyph, FT_RENDER_MODE_NORMAL);
     FT_Bitmap *bm = &face_->glyph->bitmap;
     
+    // メモリへ書き込む
     u32 width  = bm->width;
     u32 height = bm->rows;
-    u32 pitch = 1;
-    GLuint * img = new GLuint[width * height];
-    memset( img, 0, sizeof(GLuint) * width * height);
+    u32* img = new u32[width * height];
+    memset( img, 0, sizeof(u32) * width * height);
     
     int c ;
     for (int row = 0; row < bm->rows; row ++) {
@@ -103,9 +111,11 @@ void SpriteFont::spriteWithFont(const char* fontFilePath)
         }
     }
 
-    // テクスチャを生成して書き込む
-    Texture texture = Texture(new TextureBase(width, height, RGBA));
-    texture->writeImage(0, 0, width, height, RGBA, img);
+    // テクスチャへ書き込み
+    texture->writeImage(0, 0, width, height, PIXEL_FORMAT_RGBA, img);
+
+    delete []img;
+
     texture->bind();
         texture->setWrapModeS(WRAP_CLAMP);
         texture->setWrapModeT(WRAP_CLAMP);
@@ -113,10 +123,6 @@ void SpriteFont::spriteWithFont(const char* fontFilePath)
         texture->setMinFilterMode(MIPMAP_LINEAR);
     texture->unbind();
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    delete []img;
 
     this->create(texture);
 }
@@ -124,10 +130,19 @@ void SpriteFont::spriteWithFont(const char* fontFilePath)
 // freetype2
 // -----------------------------------
 
+/* -------------------------------------------------- */
 class Node
+/* -------------------------------------------------- */
 {
     private:
+        Node*   parent_;
+        std::list<Node*> childlen_;
+
+        std::string name_;
+        Transform   transform_;
+
         Node() { Node("", NULL); }
+
     public:
         Node(std::string name, Node *parent)
         : name_(name)
@@ -148,27 +163,6 @@ class Node
         std::list<Node*>* childlen() { return &childlen_; }
         void addChild(Node *child) { child->setParent(this); childlen_.push_back(child); }
 
-    private:
-        std::string name_;
-
-        Node*   parent_;
-        std::list<Node*> childlen_;
-
-        Transform   transform_;
-};
-
-class Scene : public Node
-{
-public:
-    Scene(std::string name)
-    : Node(name, NULL)
-    {
-    
-    };
-    
-    virtual ~Scene() {}
-    
-private:
 };
 
 template<class T>
@@ -187,12 +181,18 @@ void nodeTraversal(T *node, u32 depth)
     }
 }
 
-static Texture fontTex = NULL;
-
 class IDrawable
 {
 public:
     virtual void draw() = 0;
+};
+
+
+
+/* -------------------------------------------------- */
+class TextureAtlas
+/* -------------------------------------------------- */
+{
 };
 
 int main(int argc, const char * argv[])
@@ -239,7 +239,6 @@ int main(int argc, const char * argv[])
 
     Sprite sprite;
     sprite.create("/Users/rugnight/Developer/Workspace/glfw/beauty.tga");
-    //sprite.create(fontTex);
     
     Model mesh;
     mesh.createFromFile("/Users/rugnight/Developer/Workspace/glfw/mikuA.obj");
@@ -247,6 +246,10 @@ int main(int argc, const char * argv[])
     // Zテストの設定
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    // 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     while (glfwGetWindowParam(GLFW_OPENED)) {
         

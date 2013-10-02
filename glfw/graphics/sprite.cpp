@@ -16,16 +16,6 @@ using namespace rc::graphics;
 /* -------------------------------------------------- */
 // local types
 /* -------------------------------------------------- */
-typedef struct attrbPosition {
-    f32 x;
-    f32 y;
-    f32 z;
-} AttrbPosition;
-
-typedef struct attrbUv_ {
-    f32 u;
-    f32 v;
-} AttrbUv;
 
 namespace rc { namespace graphics {
 

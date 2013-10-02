@@ -35,14 +35,21 @@ namespace rc { namespace graphics {
             Sprite();
             virtual ~Sprite();
 
+            // ------------------------------
+            // 生成
+            // ------------------------------
             void create(u32 width, u32 height);
-
             void create(const char* filePath);
             void create(graphics::Texture texture);
             void destroy();
 
+            // ------------------------------
+            // ------------------------------
             void setAnchor(const math::Vector3& anchor);
 
+            // ------------------------------
+            //  描画
+            // ------------------------------
             void draw();
 
     };
